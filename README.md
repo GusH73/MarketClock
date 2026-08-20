@@ -32,17 +32,7 @@ ASX, NZX, Tokyo, Singapore, Hong Kong, London, Frankfurt/Xetra, NYSE and NASDAQ.
 4. Choose `Add to Home Screen`.
 5. Launch Market Clock from the Home Screen.
 
-## Free hosting
-### GitHub Pages
-Upload all files in this folder to a repository and enable GitHub Pages for the main branch.
-
-### Netlify
-Drag the entire folder into Netlify Drop.
-
-### Cloudflare Pages
-Create a static Pages project and upload/deploy all files.
-
-## Important
+## Note
 Service workers and PWA installation require HTTPS (or localhost for testing). Opening `index.html` directly from your phone's file system will show the page, but will not provide full PWA installation/offline behaviour.
 
 This version models normal weekday cash-market sessions. Exchange holidays and special/half-day sessions are not yet included.
