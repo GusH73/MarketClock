@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#f3f4f6" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Market Clock" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <title>Market Clock</title>
+  <style>
+    :root{
+      --bg:#f3f4f6;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --line:#d1d5db;
+      --open:#16a34a;
+      --closed:#dc2626;
+      --shadow:0 10px 30px rgba(17,24,39,.08);
+    }
+
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{
+      margin:0;
+      width:100%;
+      min-height:100%;
+      background:var(--bg);
+      color:var(--text);
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      overscroll-behavior:none;
+    }
+
+    body{
+      min-height:100svh;
+      min-height:100dvh;
+      padding:
+        max(env(safe-area-inset-top), 8px)
+        max(env(safe-area-inset-right), 10px)
+        max(env(safe-area-inset-bottom), 10px)
+        max(env(safe-area-inset-left), 10px);
+    }
+
+    .app{
+      width:100%;
+      min-height:calc(100dvh - max(env(safe-area-inset-top),8px) - max(env(safe-area-inset-bottom),10px));
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      max-width:520px;
+    }
+
+    .title{
+      text-align:center;
+      margin:0 0 10px;
+      flex:0 0 auto;
+    }
+    .title h1{
+      font-size:clamp(1.25rem,5vw,1.55rem);
+      margin:0;
+      font-weight:800;
+      letter-spacing:-.02em;
+    }
+    .title p{
+      margin:3px 0 0;
+      color:var(--muted);
+      font-size:clamp(.76rem,3.2vw,.9rem);
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid #e5e7eb;
+      border-radius:22px;
+      box-shadow:var(--shadow);
+      padding:clamp(12px,3.7vw,18px);
+      flex:0 0 auto;
+    }
+
+    label{
+      display:block;
+      font-size:.72rem;
+      font-weight:800;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      margin-bottom:6px;
+    }
+
+    select{
+      width:100%;
+      min-height:46px;
+      font:inherit;
+      font-size:16px; /* prevents iOS auto-zoom */
+      font-weight:700;
+      color:var(--text);
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:13px;
+      padding:10px 42px 10px 13px;
+      outline:none;
+    }
+    select:focus{
+      border-color:#6b7280;
+      box-shadow:0 0 0 3px rgba(107,114,128,.12);
+    }
+
+    .market-head{
+      text-align:center;
+      margin:12px 0 2px;
+    }
+    .market-name{
+      font-size:clamp(1rem,4.4vw,1.18rem);
+      font-weight:800;
+      margin:0;
+      line-height:1.15;
+    }
+    .market-city{
+      font-size:clamp(.75rem,3.2vw,.86rem);
+      color:var(--muted);
+      margin-top:3px;
+    }
+
+    .clock-wrap{
+      display:grid;
+      place-items:center;
+      margin:4px 0 8px;
+      width:100%;
+    }
+
+    canvas{
+      width:min(90vw, 42dvh, 390px);
+      max-width:100%;
+      height:auto;
+      display:block;
+      touch-action:none;
+    }
+
+    .status{
+      text-align:center;
+      margin-top:0;
+    }
+    .status-row{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      font-size:clamp(.9rem,3.7vw,1rem);
+      font-weight:850;
+    }
+    .dot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background:var(--closed);
+      flex:0 0 auto;
+    }
+    .countdown{
+      font-size:clamp(.8rem,3.2vw,.94rem);
+      margin-top:3px;
+      color:var(--muted);
+      font-weight:700;
+      line-height:1.25;
+    }
+
+    .times{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-top:10px;
+    }
+    .time-box{
+      border:1px solid #e5e7eb;
+      border-radius:14px;
+      padding:9px 8px;
+      text-align:center;
+      background:#fafafa;
+    }
+    .time-box .k{
+      font-size:.66rem;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:var(--muted);
+      font-weight:800;
+    }
+    .time-box .v{
+      font-size:clamp(1rem,4vw,1.12rem);
+      font-weight:850;
+      margin-top:2px;
+    }
+
+    .local-time{
+      text-align:center;
+      color:var(--muted);
+      font-size:clamp(.68rem,2.8vw,.79rem);
+      margin-top:8px;
+      line-height:1.35;
+    }
+
+    .footer{
+      text-align:center;
+      color:#9ca3af;
+      font-size:.66rem;
+      margin-top:7px;
+      padding:0 4px;
+      flex:0 0 auto;
+    }
+
+    /* Short phones / landscape: shrink vertical whitespace first */
+    @media (max-height:760px){
+      .title{margin-bottom:7px}
+      .title p{display:none}
+      .card{padding:11px 13px}
+      .market-head{margin-top:8px}
+      canvas{width:min(82vw, 40dvh, 330px)}
+      .times{margin-top:7px}
+      .local-time{margin-top:6px}
+      .footer{margin-top:5px}
+    }
+
+    /* Very small phones */
+    @media (max-width:360px){
+      body{
+        padding:
+          max(env(safe-area-inset-top), 6px)
+          max(env(safe-area-inset-right), 7px)
+          max(env(safe-area-inset-bottom), 7px)
+          max(env(safe-area-inset-left), 7px);
+      }
+      .card{border-radius:18px}
+      canvas{width:min(92vw, 39dvh, 310px)}
+      .time-box{padding:8px 5px}
+    }
+
+    /* Desktop/tablet fallback */
+    @media (min-width:700px){
+      body{padding:20px}
+      .app{max-width:520px;min-height:calc(100dvh - 40px)}
+      canvas{width:min(72vw, 390px)}
+    }
+  
+    .install-box{
+      display:none;
+      margin-top:10px;
+      padding:10px 12px;
+      border:1px solid #e5e7eb;
+      border-radius:14px;
+      background:#fafafa;
+      text-align:center;
+    }
+    .install-box.show{display:block}
+    .install-copy{
+      color:var(--muted);
+      font-size:.76rem;
+      line-height:1.35;
+      margin-bottom:7px;
+    }
+    .install-btn{
+      appearance:none;
+      border:0;
+      border-radius:11px;
+      background:#111827;
+      color:#fff;
+      font:inherit;
+      font-size:.86rem;
+      font-weight:800;
+      padding:9px 14px;
+      cursor:pointer;
+      min-height:40px;
+    }
+    .install-btn:active{transform:translateY(1px)}
+
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="title">
+      <h1>Market Clock</h1>
+      <p>Selected market hours in your local time</p>
+    </div>
+
+    <section class="card">
+      <label for="marketSelect">Market</label>
+      <select id="marketSelect"></select>
+
+      <div class="market-head">
+        <div class="market-name" id="marketName">Australian Securities Exchange</div>
+        <div class="market-city" id="marketCity">Sydney, Australia</div>
+      </div>
+
+      <div class="clock-wrap">
+        <canvas id="clock" width="700" height="700" aria-label="Market hours clock"></canvas>
+      </div>
+
+      <div class="status">
+        <div class="status-row">
+          <span class="dot" id="statusDot"></span>
+          <span id="statusText">Checking…</span>
+        </div>
+        <div class="countdown" id="countdown"></div>
+      </div>
+
+      <div class="times">
+        <div class="time-box">
+          <div class="k">Opens</div>
+          <div class="v" id="openTime">—</div>
+        </div>
+        <div class="time-box">
+          <div class="k">Closes</div>
+          <div class="v" id="closeTime">—</div>
+        </div>
+      </div>
+
+      <div class="local-time" id="localInfo"></div>
+
+      <div class="install-box" id="installBox">
+        <div class="install-copy" id="installCopy">Install Market Clock for full-screen access.</div>
+        <button class="install-btn" id="installBtn" type="button">Add to Home Screen</button>
+      </div>
+    </section>
+
+    <div class="footer">Times automatically adjust for daylight saving where applicable.</div>
+  </main>
+
+<script>
+const markets = [
+  { id:"ASX", name:"Australian Securities Exchange", short:"ASX", city:"Sydney, Australia", tz:"Australia/Sydney", open:"10:00", close:"16:00", weekdays:[1,2,3,4,5] },
+  { id:"NZX", name:"New Zealand Exchange", short:"NZX", city:"Auckland, New Zealand", tz:"Pacific/Auckland", open:"10:00", close:"16:45", weekdays:[1,2,3,4,5] },
+  { id:"TSE", name:"Tokyo Stock Exchange", short:"Tokyo", city:"Tokyo, Japan", tz:"Asia/Tokyo", open:"09:00", close:"15:30", weekdays:[1,2,3,4,5] },
+  { id:"SGX", name:"Singapore Exchange", short:"Singapore", city:"Singapore", tz:"Asia/Singapore", open:"09:00", close:"17:00", weekdays:[1,2,3,4,5] },
+  { id:"HKEX", name:"Hong Kong Stock Exchange", short:"Hong Kong", city:"Hong Kong", tz:"Asia/Hong_Kong", open:"09:30", close:"16:00", weekdays:[1,2,3,4,5] },
+  { id:"LSE", name:"London Stock Exchange", short:"London", city:"London, United Kingdom", tz:"Europe/London", open:"08:00", close:"16:30", weekdays:[1,2,3,4,5] },
+  { id:"XETRA", name:"Frankfurt / Xetra", short:"Frankfurt", city:"Frankfurt, Germany", tz:"Europe/Berlin", open:"09:00", close:"17:30", weekdays:[1,2,3,4,5] },
+  { id:"NYSE", name:"New York Stock Exchange", short:"New York", city:"New York, USA", tz:"America/New_York", open:"09:30", close:"16:00", weekdays:[1,2,3,4,5] },
+  { id:"NASDAQ", name:"NASDAQ", short:"NASDAQ", city:"New York, USA", tz:"America/New_York", open:"09:30", close:"16:00", weekdays:[1,2,3,4,5] }
+];
+
+const select = document.getElementById("marketSelect");
+markets.forEach(m => {
+  const o = document.createElement("option");
+  o.value = m.id;
+  o.textContent = `${m.short} — ${m.city}`;
+  select.appendChild(o);
+});
+select.value = localStorage.getItem("marketClockSelection") || "ASX";
+if (!markets.some(m=>m.id===select.value)) select.value = "ASX";
+
+const canvas = document.getElementById("clock");
+const ctx = canvas.getContext("2d");
+
+function partsInZone(date, timeZone){
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone, year:"numeric", month:"2-digit", day:"2-digit",
+    hour:"2-digit", minute:"2-digit", second:"2-digit",
+    hourCycle:"h23", weekday:"short"
+  });
+  const p = Object.fromEntries(fmt.formatToParts(date).filter(x=>x.type!=="literal").map(x=>[x.type,x.value]));
+  const wd = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(p.weekday);
+  return {year:+p.year,month:+p.month,day:+p.day,hour:+p.hour,minute:+p.minute,second:+p.second,weekday:wd};
+}
+
+function tzOffsetMs(date, timeZone){
+  const p = partsInZone(date, timeZone);
+  const asUTC = Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute,p.second);
+  return asUTC - date.getTime();
+}
+
+function zonedDateToUtc(y,m,d,h,min,timeZone){
+  let guess = Date.UTC(y,m-1,d,h,min,0);
+  for(let i=0;i<3;i++){
+    const off = tzOffsetMs(new Date(guess), timeZone);
+    guess = Date.UTC(y,m-1,d,h,min,0) - off;
+  }
+  return new Date(guess);
+}
+
+function addDaysYMD(y,m,d,delta){
+  const z = new Date(Date.UTC(y,m-1,d+delta,12));
+  return {year:z.getUTCFullYear(),month:z.getUTCMonth()+1,day:z.getUTCDate(),weekday:z.getUTCDay()};
+}
+
+function parseHM(s){ const [h,m]=s.split(":").map(Number); return {h,m}; }
+
+function sessionBounds(market, now){
+  const zp = partsInZone(now, market.tz);
+  const op = parseHM(market.open), cl = parseHM(market.close);
+
+  const todayOpen = zonedDateToUtc(zp.year,zp.month,zp.day,op.h,op.m,market.tz);
+  const todayClose = zonedDateToUtc(zp.year,zp.month,zp.day,cl.h,cl.m,market.tz);
+  const tradingToday = market.weekdays.includes(zp.weekday);
+  const isOpen = tradingToday && now >= todayOpen && now < todayClose;
+
+  let nextOpen;
+  if(tradingToday && now < todayOpen){
+    nextOpen = todayOpen;
+  } else {
+    for(let i=1;i<=8;i++){
+      const x=addDaysYMD(zp.year,zp.month,zp.day,i);
+      if(market.weekdays.includes(x.weekday)){
+        nextOpen=zonedDateToUtc(x.year,x.month,x.day,op.h,op.m,market.tz);
+        break;
+      }
+    }
+  }
+
+  let nextClose = isOpen ? todayClose : null;
+  return {isOpen, todayOpen, todayClose, nextOpen, nextClose};
+}
+
+function fmtLocalTime(date){
+  return new Intl.DateTimeFormat(undefined,{hour:"numeric",minute:"2-digit"}).format(date);
+}
+function fmtLocalDateTime(date){
+  return new Intl.DateTimeFormat(undefined,{weekday:"short",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}).format(date);
+}
+function fmtDuration(ms){
+  ms=Math.max(0,ms);
+  const totalMin=Math.floor(ms/60000);
+  const d=Math.floor(totalMin/1440);
+  const h=Math.floor((totalMin%1440)/60);
+  const min=totalMin%60;
+  if(d>0) return `${d}d ${h}h ${min}m`;
+  if(h>0) return `${h}h ${min}m`;
+  return `${min}m`;
+}
+function localHM(date){
+  return {h:date.getHours(),m:date.getMinutes()+date.getSeconds()/60};
+}
+function angleForLocalDate(date){
+  const x=localHM(date);
+  return ((x.h%12)+x.m/60)*Math.PI/6 - Math.PI/2;
+}
+function angleForLocalHour24(h,m=0){
+  return ((h%12)+m/60)*Math.PI/6 - Math.PI/2;
+}
+
+function drawClock(market, bounds, now){
+  const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,R=300;
+  ctx.clearRect(0,0,W,H);
+
+  // face
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+  ctx.fillStyle="#fff"; ctx.fill();
+  ctx.lineWidth=8; ctx.strokeStyle="#111827"; ctx.stroke();
+
+  // Market open arc in device local time
+  const a1=angleForLocalDate(bounds.todayOpen);
+  const a2=angleForLocalDate(bounds.todayClose);
+  ctx.beginPath();
+  ctx.arc(cx,cy,R-24,a1,a2,false);
+  ctx.lineWidth=20; ctx.lineCap="round"; ctx.strokeStyle="#16a34a"; ctx.stroke();
+
+  // ticks + numbers
+  ctx.textAlign="center"; ctx.textBaseline="middle";
+  for(let i=0;i<60;i++){
+    const a=i*Math.PI/30-Math.PI/2;
+    const major=i%5===0;
+    const r1=major?R-47:R-30, r2=R-13;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);
+    ctx.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);
+    ctx.lineWidth=major?5:2; ctx.strokeStyle=major?"#111827":"#9ca3af"; ctx.stroke();
+  }
+  ctx.fillStyle="#111827"; ctx.font="700 34px system-ui";
+  for(let n=1;n<=12;n++){
+    const a=n*Math.PI/6-Math.PI/2;
+    ctx.fillText(n,cx+Math.cos(a)*(R-85),cy+Math.sin(a)*(R-85));
+  }
+
+  // open/close markers
+  function marker(date,label,color){
+    const a=angleForLocalDate(date);
+    const x=cx+Math.cos(a)*(R-24), y=cy+Math.sin(a)*(R-24);
+    ctx.beginPath();ctx.arc(x,y,13,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+    const tx=cx+Math.cos(a)*(R-125),ty=cy+Math.sin(a)*(R-125);
+    ctx.fillStyle=color;ctx.font="800 22px system-ui";ctx.fillText(label,tx,ty);
+  }
+  marker(bounds.todayOpen,"OPEN","#16a34a");
+  marker(bounds.todayClose,"CLOSE","#dc2626");
+
+  // hands show current DEVICE local time
+  const sec=now.getSeconds(), min=now.getMinutes()+sec/60, hr=(now.getHours()%12)+min/60;
+  function hand(angle,len,width,color){
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(angle)*len,cy+Math.sin(angle)*len);
+    ctx.lineWidth=width;ctx.lineCap="round";ctx.strokeStyle=color;ctx.stroke();
+  }
+  hand(hr*Math.PI/6-Math.PI/2,150,14,"#111827");
+  hand(min*Math.PI/30-Math.PI/2,215,9,"#374151");
+  hand(sec*Math.PI/30-Math.PI/2,235,3,"#dc2626");
+  ctx.beginPath();ctx.arc(cx,cy,15,0,Math.PI*2);ctx.fillStyle="#111827";ctx.fill();
+
+  ctx.fillStyle="#6b7280";ctx.font="700 19px system-ui";
+  ctx.fillText("LOCAL TIME",cx,cy+78);
+}
+
+function update(){
+  const market=markets.find(m=>m.id===select.value) || markets[0];
+  const now=new Date();
+  const b=sessionBounds(market,now);
+
+  document.getElementById("marketName").textContent=market.name;
+  document.getElementById("marketCity").textContent=market.city;
+  document.getElementById("openTime").textContent=fmtLocalTime(b.todayOpen);
+  document.getElementById("closeTime").textContent=fmtLocalTime(b.todayClose);
+
+  const dot=document.getElementById("statusDot"), st=document.getElementById("statusText"), cd=document.getElementById("countdown");
+  if(b.isOpen){
+    dot.style.background="#16a34a";
+    st.textContent="MARKET OPEN";
+    cd.textContent=`Closes in ${fmtDuration(b.nextClose-now)}`;
+  } else {
+    dot.style.background="#dc2626";
+    st.textContent="MARKET CLOSED";
+    cd.textContent=b.nextOpen ? `Opens in ${fmtDuration(b.nextOpen-now)} · ${fmtLocalDateTime(b.nextOpen)}` : "";
+  }
+
+  const localZone=Intl.DateTimeFormat().resolvedOptions().timeZone || "your device time zone";
+  document.getElementById("localInfo").textContent=`Your time zone: ${localZone} · ${new Intl.DateTimeFormat(undefined,{hour:"numeric",minute:"2-digit",second:"2-digit"}).format(now)}`;
+
+  drawClock(market,b,now);
+}
+
+select.addEventListener("change",()=>{
+  localStorage.setItem("marketClockSelection",select.value);
+  update();
+});
+update();
+setInterval(update,1000);
+</script>
+
+<script>
+let deferredInstallPrompt = null;
+
+function isStandaloneMode(){
+  return window.matchMedia("(display-mode: standalone)").matches ||
+         window.navigator.standalone === true;
+}
+
+function isIOS(){
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+function updateInstallUI(){
+  const box = document.getElementById("installBox");
+  const btn = document.getElementById("installBtn");
+  const copy = document.getElementById("installCopy");
+  if (!box || !btn || !copy) return;
+
+  if (isStandaloneMode()){
+    box.classList.remove("show");
+    return;
+  }
+
+  if (deferredInstallPrompt){
+    copy.textContent = "Install Market Clock for full-screen access without browser controls.";
+    btn.textContent = "Add to Home Screen";
+    box.classList.add("show");
+  } else if (isIOS()){
+    copy.textContent = "On iPhone: tap Share, then Add to Home Screen.";
+    btn.textContent = "Installation Instructions";
+    box.classList.add("show");
+  } else {
+    box.classList.remove("show");
+  }
+}
+
+window.addEventListener("beforeinstallprompt", event => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  updateInstallUI();
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  updateInstallUI();
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("installBtn");
+  if (btn){
+    btn.addEventListener("click", async () => {
+      if (deferredInstallPrompt){
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        updateInstallUI();
+      } else if (isIOS()){
+        alert("On iPhone or iPad: tap the Share button in Safari, scroll down, then choose “Add to Home Screen”.");
+      }
+    });
+  }
+  updateInstallUI();
+
+  if ("serviceWorker" in navigator){
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./service-worker.js");
+    });
+  }
+});
+</script>
+
+</body>
+</html>
